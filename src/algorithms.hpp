@@ -28,6 +28,7 @@
 #define INSERTION_SORT_NAME "Insertion Sort"
 #define SELECTION_SORT_NAME "Selection Sort"
 #define QUICK_SORT_NAME     "Quick Sort"
+#define SHELL_SORT_NAME     "Shell Sort"
 #define RADIX_SORT_NAME     "Radix Sort"
 
 namespace atn {
@@ -57,6 +58,7 @@ class Algorithms {
     void insertion_sort();
     void selection_sort();
     void quick_sort();
+    void shell_sort();
   private:
     void wait();
     void swap(size_t index_1, size_t index_2);
@@ -73,6 +75,7 @@ class Algorithms {
     void merge(size_t start, size_t mid, size_t end);
     void quick_sort(int left, int right);
     int partition(int left, int right);
+    std::vector<size_t> generate_gaps() const;
 };
 
 // =============================================================================
@@ -95,18 +98,20 @@ Algorithms::Algorithms(const std::shared_ptr<std::condition_variable>& cond, siz
 void Algorithms::main(std::vector<void (Algorithms::*)()> sorts) {
     this->fill();
     std::this_thread::sleep_for(std::chrono::milliseconds(DELAY));
-    for (size_t i = 0; i < sorts.size(); ++i) {
-        this->shuffle();
-        std::this_thread::sleep_for(std::chrono::milliseconds(DELAY));
-        this->reset();
-        (this->*sorts[i])();
-        this->clear_comp_indicies();
-        this->clear_swap_indicies();
-        std::this_thread::sleep_for(std::chrono::milliseconds(DELAY));
-        this->reset();
-        assert(this->check_sorted());
-        this->reset();
-        std::this_thread::sleep_for(std::chrono::milliseconds(DELAY));
+    while (true) {
+        for (size_t i = 0; i < sorts.size(); ++i) {
+            this->shuffle();
+            std::this_thread::sleep_for(std::chrono::milliseconds(DELAY));
+            this->reset();
+            (this->*sorts[i])();
+            this->clear_comp_indicies();
+            this->clear_swap_indicies();
+            std::this_thread::sleep_for(std::chrono::milliseconds(DELAY));
+            this->reset();
+            assert(this->check_sorted());
+            this->reset();
+            std::this_thread::sleep_for(std::chrono::milliseconds(DELAY));
+        }
     }
 }
 
@@ -201,6 +206,21 @@ void Algorithms::selection_sort() {
 void Algorithms::quick_sort() {
     this->name = QUICK_SORT_NAME;
     return this->quick_sort(0, this->array_size - 1);
+}
+
+// https://en.wikipedia.org/wiki/Shellsort#Pseudocode
+void Algorithms::shell_sort() {
+    this->name = SHELL_SORT_NAME;
+    std::vector<size_t> gaps = generate_gaps();
+    for (size_t gap : gaps) {
+        for (size_t i = gap; i < this->array_size; ++i) {
+            size_t temp = this->array[i], j;
+            for (j = i; j >= gap && compare_gt(j - gap, j); j -= gap) {
+                this->swap(j, j - gap);
+            }
+            this->array[j] = temp;
+        }
+    }
 }
 
 // ============================== Private Members =============================
@@ -377,7 +397,7 @@ void Algorithms::merge(size_t start, size_t mid, size_t end) {
 
 void Algorithms::quick_sort(int left, int right) {
     if (left < 0 || right < 0 || left >= right) return;
-    this->compare_gt(left, right);
+    //this->compare_gt(left, right);
     int p = this->partition(left, right);
     this->quick_sort(left, p);
     this->quick_sort(p + 1, right);
@@ -400,6 +420,14 @@ int Algorithms::partition(int left, int right) {
         if (i >= j) return j;
         this->swap(i, j);
     }
+}
+
+std::vector<size_t> Algorithms::generate_gaps() const {
+    std::vector<size_t> gaps;
+    for (size_t i = this->array_size >> 1; i != 0; i >>= 1) {
+        gaps.push_back(i);
+    }
+    return gaps;
 }
 
 } // End namespace atn
