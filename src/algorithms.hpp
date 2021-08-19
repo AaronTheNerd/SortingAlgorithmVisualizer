@@ -27,6 +27,7 @@
 #define MERGE_SORT_NAME     "Merge Sort"
 #define INSERTION_SORT_NAME "Insertion Sort"
 #define SELECTION_SORT_NAME "Selection Sort"
+#define QUICK_SORT_NAME     "Quick Sort"
 #define RADIX_SORT_NAME     "Radix Sort"
 
 namespace atn {
@@ -55,6 +56,7 @@ class Algorithms {
     void merge_sort();
     void insertion_sort();
     void selection_sort();
+    void quick_sort();
   private:
     void wait();
     void swap(size_t index_1, size_t index_2);
@@ -69,6 +71,8 @@ class Algorithms {
     bool check_sorted();
     void merge_sort(size_t left, size_t right);
     void merge(size_t start, size_t mid, size_t end);
+    void quick_sort(int left, int right);
+    int partition(int left, int right);
 };
 
 // =============================================================================
@@ -192,6 +196,13 @@ void Algorithms::selection_sort() {
         this->swap(min_index, i);
     }
 }
+
+// https://en.wikipedia.org/wiki/Quicksort#Hoare_partition_scheme
+void Algorithms::quick_sort() {
+    this->name = QUICK_SORT_NAME;
+    return this->quick_sort(0, this->array_size - 1);
+}
+
 // ============================== Private Members =============================
 
 void Algorithms::wait() {
@@ -362,6 +373,33 @@ void Algorithms::merge(size_t start, size_t mid, size_t end) {
         j++;
     }
     this->write_from_aux_array(aux, start);
+}
+
+void Algorithms::quick_sort(int left, int right) {
+    if (left < 0 || right < 0 || left >= right) return;
+    this->compare_gt(left, right);
+    int p = this->partition(left, right);
+    this->quick_sort(left, p);
+    this->quick_sort(p + 1, right);
+}
+
+int Algorithms::partition(int left, int right) {
+    int pivot_index = (left + right) / 2;
+    int pivot = this->array[pivot_index];
+    int i = left - 1;
+    int j = right + 1;
+    while (true) {
+        do {
+            i++;
+            this->compare_gt(pivot_index, i);
+        } while (pivot > this->array[i]);
+        do {
+            j--;
+            this->compare_gt(pivot_index, j);
+        } while (this->array[j] > pivot);
+        if (i >= j) return j;
+        this->swap(i, j);
+    }
 }
 
 } // End namespace atn
