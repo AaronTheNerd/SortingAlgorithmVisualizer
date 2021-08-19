@@ -3,6 +3,7 @@
 
 #include "../src/algorithms.hpp"
 
+#include <cmath>
 #include <condition_variable>
 #include <thread>
 #include <gtkmm.h>
@@ -14,15 +15,14 @@ namespace atn {
 
 #define SEPARATION      0
 #define TEXT_OFFSET     10
-#define FONT_SIZE       24
+#define FONT_SIZE       18
 #define ARRAY_SIZE      100
-#define REFRESH_RATE    10
+#define REFRESH_RATE    5
 
 // http://transit.iut2.upmf-grenoble.fr/doc/gtkmm-3.0/tutorial/html/sec-drawing-text.html
 class VisualizerDrawingArea : public Gtk::DrawingArea {
   public:
     std::shared_ptr<std::condition_variable> cond;
-    std::mutex mtx;
     atn::Algorithms algos;
     std::thread t;
     VisualizerDrawingArea();
@@ -45,11 +45,7 @@ VisualizerDrawingArea::VisualizerDrawingArea(): cond(std::make_shared<std::condi
     std::cerr << "Starting VisualizerDrawingArea constructor" << std::endl;
     #endif
     Glib::signal_timeout().connect(sigc::mem_fun(*this, &VisualizerDrawingArea::update), REFRESH_RATE);
-    auto function = &Algorithms::bubble_sort;
-    std::vector<void (Algorithms::*)()> sorts = {&Algorithms::bubble_sort};
-    #ifdef DEBUG
-    std::cout << "FUNCTION TYPE: " << typeid(function).name() << std::endl;
-    #endif
+    std::vector<void (Algorithms::*)()> sorts = {&Algorithms::bubble_sort, &Algorithms::cocktail_shaker_sort, &Algorithms::selection_sort, &Algorithms::insertion_sort, &Algorithms::merge_sort};
     t = std::thread(&Algorithms::main, &this->algos, sorts);
     #ifdef DEBUG
     std::cerr << "Ending VisualizerDrawingArea constructor" << std::endl;
@@ -60,7 +56,7 @@ VisualizerDrawingArea::~VisualizerDrawingArea() {}
 
 void VisualizerDrawingArea::init(const int width, const int height) {
     this->_bar_width = 1.0f * (width - ((this->algos.array_size - 1) * SEPARATION)) / this->algos.array_size;
-    this->_bar_scale = (1.0f * height - (3 * FONT_SIZE) - TEXT_OFFSET) / this->algos.array_size;
+    this->_bar_scale = (1.0f * height - (5 * FONT_SIZE) - TEXT_OFFSET) / this->algos.array_size;
     #ifdef DEBUG
     std::cerr << "Init Results: w: " << this->_bar_width << ", s: " << this->_bar_scale << std::endl;
     #endif
@@ -124,16 +120,20 @@ void VisualizerDrawingArea::draw_stats(const Cairo::RefPtr<Cairo::Context>& cr, 
     cr->show_text(this->algos.name);
     cr->restore();
     cr->save();
-    cr->move_to(FONT_SIZE * 20 + TEXT_OFFSET, TEXT_OFFSET + FONT_SIZE);
+    cr->move_to(TEXT_OFFSET, TEXT_OFFSET + 2 * FONT_SIZE);
     cr->show_text(std::string("Array Size: ") + std::to_string(this->algos.array_size));
     cr->restore();
     cr->save();
-    cr->move_to(TEXT_OFFSET, TEXT_OFFSET + 2 * FONT_SIZE);
+    cr->move_to(TEXT_OFFSET, TEXT_OFFSET + 3 * FONT_SIZE);
     cr->show_text(std::string("Comparisons: ") + std::to_string(this->algos.comparisons));
     cr->restore();
     cr->save();
-    cr->move_to(TEXT_OFFSET, TEXT_OFFSET + 3 * FONT_SIZE);
+    cr->move_to(TEXT_OFFSET, TEXT_OFFSET + 4 * FONT_SIZE);
     cr->show_text(std::string("Swaps: ") + std::to_string(this->algos.swaps));
+    cr->restore();
+    cr->save();
+    cr->move_to(TEXT_OFFSET, TEXT_OFFSET + 5 * FONT_SIZE);
+    cr->show_text(std::string("Writes to Another Array: ") + std::to_string(this->algos.writes_to_aux_array));
     cr->restore();
 }
 
