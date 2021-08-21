@@ -3,7 +3,7 @@
 
 ## External Libraries Used
 
-`gtkmm 2.0`\
+**gtkmm 2.0**\
 I personally downloaded this by running the command:
 ```
 apt-get install libgtkmm-2.0-dev
