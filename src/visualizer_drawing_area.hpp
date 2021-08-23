@@ -17,7 +17,7 @@ namespace atn {
 #define TEXT_OFFSET     10
 #define FONT_SIZE       18
 #define ARRAY_SIZE      100
-#define REFRESH_RATE    5
+#define REFRESH_RATE    2
 
 // http://transit.iut2.upmf-grenoble.fr/doc/gtkmm-3.0/tutorial/html/sec-drawing-text.html
 class VisualizerDrawingArea : public Gtk::DrawingArea {
@@ -45,8 +45,7 @@ VisualizerDrawingArea::VisualizerDrawingArea(): cond(std::make_shared<std::condi
     std::cerr << "Starting VisualizerDrawingArea constructor" << std::endl;
     #endif
     Glib::signal_timeout().connect(sigc::mem_fun(*this, &VisualizerDrawingArea::update), REFRESH_RATE);
-    std::vector<void (Algorithms::*)()> sorts = {&Algorithms::bubble_sort, &Algorithms::cocktail_shaker_sort, &Algorithms::selection_sort, &Algorithms::insertion_sort, &Algorithms::merge_sort};
-    t = std::thread(&Algorithms::main, &this->algos, sorts);
+    t = std::thread(&Algorithms::main, &this->algos, SortConfigs::DEFAULT);
     #ifdef DEBUG
     std::cerr << "Ending VisualizerDrawingArea constructor" << std::endl;
     #endif

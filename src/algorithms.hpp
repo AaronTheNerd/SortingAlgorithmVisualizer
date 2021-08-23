@@ -37,6 +37,8 @@ namespace atn {
 // =============================== Declarations ================================
 // =============================================================================
 
+struct SortConfig;
+
 class Algorithms {
   public:
     std::shared_ptr<std::condition_variable> cond;
@@ -51,7 +53,7 @@ class Algorithms {
     int swap_index_1, swap_index_2;
     size_t writes_to_aux_array;
     Algorithms(const std::shared_ptr<std::condition_variable>& cond, size_t array_size);
-    void main(std::vector<void (Algorithms::*)()> sorts);
+    void main(std::vector<SortConfig> configs);
     void bubble_sort();
     void cocktail_shaker_sort();
     void merge_sort();
@@ -78,6 +80,25 @@ class Algorithms {
     std::vector<size_t> generate_gaps() const;
 };
 
+struct SortConfig {
+    void (Algorithms::*func)();
+    size_t n;
+};
+
+namespace SortConfigs {
+
+std::vector<SortConfig> DEFAULT = {
+        SortConfig{&Algorithms::bubble_sort, 100},
+        SortConfig{&Algorithms::cocktail_shaker_sort, 150},
+        SortConfig{&Algorithms::selection_sort, 100},
+        SortConfig{&Algorithms::merge_sort, 500},
+        SortConfig{&Algorithms::insertion_sort, 200},
+        SortConfig{&Algorithms::quick_sort, 500},
+        SortConfig{&Algorithms::shell_sort, 500}
+};
+
+}; // End namespace SortConfigs
+
 // =============================================================================
 // ================================ Definitions ================================
 // =============================================================================
@@ -89,21 +110,23 @@ Algorithms::Algorithms(const std::shared_ptr<std::condition_variable>& cond, siz
     #ifdef DEBUG
     std::cerr << "Starting Algorithm constructor" << std::endl;
     #endif
+    srand(this->seed);
     this->reset();
     #ifdef DEBUG
     std::cerr << "Ending Algorithm constructor" << std::endl;
     #endif
 }
 
-void Algorithms::main(std::vector<void (Algorithms::*)()> sorts) {
-    this->fill();
-    std::this_thread::sleep_for(std::chrono::milliseconds(DELAY));
+void Algorithms::main(std::vector<SortConfig> configs) {
     while (true) {
-        for (size_t i = 0; i < sorts.size(); ++i) {
+        for (size_t i = 0; i < configs.size(); ++i) {
+            this->array_size = configs[i].n;
+            this->fill();
+            std::this_thread::sleep_for(std::chrono::milliseconds(DELAY));
             this->shuffle();
             std::this_thread::sleep_for(std::chrono::milliseconds(DELAY));
             this->reset();
-            (this->*sorts[i])();
+            (this->*configs[i].func)();
             this->clear_comp_indicies();
             this->clear_swap_indicies();
             std::this_thread::sleep_for(std::chrono::milliseconds(DELAY));
@@ -308,7 +331,6 @@ void Algorithms::reset() {
     #ifdef DEBUG
     std::cerr << "Starting reset" << std::endl;
     #endif
-    srand(this->seed);
     this->comparisons = 0;
     this->swaps = 0;
     this->writes_to_aux_array = 0;
@@ -326,7 +348,6 @@ void Algorithms::fill() {
     this->array = std::vector<size_t>(this->array_size, 0);
     for (size_t i = 0 ; i < this->array_size; ++i) {
         this->array[i] = i + 1;
-        this->wait();
     }
     #ifdef DEBUG
     std::cerr << "Ending fill" << std::endl;
